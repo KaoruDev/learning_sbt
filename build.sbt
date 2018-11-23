@@ -20,3 +20,9 @@ lazy val hello = (project in file("hello"))
 
 // Not really sure what this does...
 //resourceGenerators in Compile += makePropertiesFile
+
+lazy val main = (project in file ("."))
+  .aggregate(hello, helloCore)
+  .settings(
+    publish / aggregate := false,
+  )
