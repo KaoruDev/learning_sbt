@@ -1,6 +1,9 @@
 package example.core
 
-import gigahorse._, support.okhttp.Gigahorse
+import com.example.hellotwo.Dep
+import gigahorse._
+import support.okhttp.Gigahorse
+
 import scala.concurrent._
 import play.api.libs.json._
 
@@ -14,6 +17,10 @@ object Weather {
                  |and u='c'""".stripMargin,
         "format" -> "json"
       )
+
+    println(s"Dep foo: ${Dep().foo()}")
+    println(s"Dep car: ${Dep().car()}")
+    println(s"Dep bar: ${Dep().bar()}")
 
     import ExecutionContext.Implicits._
     for {
