@@ -5,6 +5,7 @@ val gigahorse = "com.eed3si9n" %% "gigahorse-okhttp" % "0.3.1"
 val playJson  = "com.typesafe.play" %% "play-json" % "2.6.9"
 
 version := "0.2.1"
+name := "The Real Core name"
 libraryDependencies += scalaTest
 libraryDependencies ++= Seq(gigahorse, playJson)
 
