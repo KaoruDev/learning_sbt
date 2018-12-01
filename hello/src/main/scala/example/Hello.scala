@@ -12,4 +12,6 @@ object Hello extends App {
   Weather.http.close()
   println(s"Dep in Hello: ${Dep().bar()}")
   println(s"Deuce in Hello: ${Deuce().deuce()}")
+
+  Weather.car()
 }

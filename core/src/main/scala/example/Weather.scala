@@ -36,4 +36,6 @@ object Weather {
       case _                 => Future.failed(sys.error(rawJson))
     }
   }
+
+  def car(): String = "Foobar"
 }

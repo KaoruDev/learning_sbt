@@ -58,6 +58,7 @@ myTask := {
 // Not really sure what this does...
 //resourceGenerators in Compile += makePropertiesFile
 lazy val main = (project in file ("."))
+  .enablePlugins(SbtPlugin, HelloPlugin)
   .aggregate(subProjects.values.toSeq.map(Project.projectToLocalProject):_*)
   .settings(
     publish / aggregate := false,
@@ -71,7 +72,12 @@ lazy val subProjects = Seq(hello, helloCore, helloTwo).map(p => p.id -> p).toMap
 lazy val taskA = taskKey[String]("Task A")
 taskA := {
   println("running task A")
-  s"Value of task B${taskB.value} : Value of task C ${taskC.value}"
+  s"Value of task B${taskB.value} : Value of task C ${taskC.value} and.... to be..."
+}
+
+taskA += {
+  println("Yet another one")
+  " continued!!"
 }
 
 lazy val taskB = taskKey[String]("Task B")
@@ -86,6 +92,7 @@ taskC := {
   println("Running task C")
   "C"
 }
+
 
 // When a task throws an exception, the calling task stops where the error was thrown and the SBT command exits with a 1
 // but note because of the special way taskKey.value works, all downstream tasks will be called even if a task prior
@@ -135,4 +142,20 @@ defThrowing := {
   meThrow()
   foobar() // this does not run
 }
+
+// IDK how to get this working
+//val listOfSettings = settingKey[String]("string string")
+//listOfSettings := "foo"
+//listOfSettings += Def.task {
+//  taskB.value + ":" + taskC.value
+//}
+
+def makeSomeSources(base: File): Seq[File] = {
+  Seq(base)
+}
+
+sourceGenerators in Compile += Def.task {
+  makeSomeSources((sourceManaged in Compile).value / "demo")
+}.taskValue
+
 

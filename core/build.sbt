@@ -1,3 +1,5 @@
+import sbt.librarymanagement.TrackLevel.TrackIfMissing
+
 import scala.sys.process.Process
 
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.5"
@@ -8,6 +10,7 @@ version := "0.2.1"
 name := "The Real Core name"
 libraryDependencies += scalaTest
 libraryDependencies ++= Seq(gigahorse, playJson)
+exportToInternal := TrackIfMissing
 
 val gitHeadCommitSha = taskKey[String]("Determines the current git commit SHA")
 gitHeadCommitSha in ThisBuild := Process("git rev-parse HEAD").lineStream.head
