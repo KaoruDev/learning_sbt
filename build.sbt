@@ -3,69 +3,42 @@ ThisBuild / version := "0.3.0" // Project version
 ThisBuild / organization := "com.kaoruk"
 ThisBuild / sbtVersion := "1.2.4" // Global SBT version
 
-lazy val someVal = taskKey[String]("Some value")
+lazy val someVal = settingKey[String]("Some value")
 
 // by default SBT will assign values to a project's scope, in this case it would be scoped to project named
 // main (see def below). Add in Global specifically adds the value to the Global scope allowing for projects
 // to access the value.
 Global / someVal := "global value"
 
-// This is also acceptable
+// This is also acceptable, but puts it in a separate scope
 ThisBuild / someVal := "This build's val"
 
 lazy val echo = taskKey[Unit]("print value of someVal")
 echo := {
-  println(someVal.value)
+  println(s"Global: ${(Global / someVal).value}")
+  println(s"ThisBuild: ${(ThisBuild / someVal).value}")
 }
 
-lazy val helloTwo = (project in file("hellotwo"))
+lazy val helloTwo: Project = Subprojects.helloTwo.project
+lazy val helloCore = Subprojects.helloCore.project
+lazy val hello = Subprojects.hello.project
   .settings(
-    name := "Hello Two",
-  )
-
-lazy val helloCore = (project in file("core"))
-  .dependsOn(helloTwo)
-  .settings(
-    name := "Hello Core"
-  )
-
-lazy val hello = (project in file("hello"))
-//  .aggregate(helloCore) // makes it possible for some commands executed in hello to be echoed to helloCore, i.e test
-  .dependsOn(helloCore)
-  .enablePlugins(JavaAppPackaging)
-  .settings(
-    name := "Hello",
     someVal := {
       s"someVal from ThisBuild: ${(someVal in ThisBuild).value} and someVal from Global: ${(someVal in Global).value}"
     }
   )
 
-lazy val myTask = taskKey[Unit]("my task woot")
-
-myTask := {
-  println(subProjects.map({
-    case (projectId: String, project: Project) => (projectId, project.dependencies.map(_.project).foreach({
-      case localProject: LocalProject => localProject.project match {
-        case "helloTwo" => (helloTwo / Compile / compile).value
-        case "helloCore" => (helloCore / Compile / compile).value
-        case projectName => println(s"KODU: $projectName")
-      }
-      case _ => ()
-    }))
-  }))
-}
-
-// Not really sure what this does...
-//resourceGenerators in Compile += makePropertiesFile
+// Plugins delegate down to all projects
 lazy val main = (project in file ("."))
   .enablePlugins(SbtPlugin, HelloPlugin)
-  .aggregate(subProjects.values.toSeq.map(Project.projectToLocalProject):_*)
+  .aggregate(
+    helloCore,
+    hello,
+    helloTwo,
+  )
   .settings(
     publish / aggregate := false,
   )
-
-lazy val subProjects = Seq(hello, helloCore, helloTwo).map(p => p.id -> p).toMap
-
 
 // In the example below, task C only runs once
 
@@ -113,14 +86,26 @@ taskExB := {
 }
 
 lazy val taskExC = taskKey[String]("Task Exception C")
-taskExC := {
+// By defining this task to Global, all subprojects will run this
+Global / taskExC := {
   println("Running task C")
+  // Task definition creates a closure, thus ThisProject refers to main
+  println(s"Project name: ${(ThisProject / name).value}")
   "C"
 }
 
+lazy val taskExD = taskKey[String]("Task Exception D")
+Global / taskExD := Def.taskDyn[String] {
+  // Even dynamic definitions will enclose on the current scope. ThisProject refers to main
+  val project = ThisProject
+  Def.task {
+    println(s"TaskD project name: ${(project / name).value}")
+    (project / name).value
+  }
+}.value
+
 // You can't set the value of a taskKey to a settingsKey but what about a method output? Works!
 def foobar(): String = {
-  println("running foobar what!?")
   "nomz"
 }
 
@@ -143,19 +128,13 @@ defThrowing := {
   foobar() // this does not run
 }
 
-// IDK how to get this working
-//val listOfSettings = settingKey[String]("string string")
-//listOfSettings := "foo"
-//listOfSettings += Def.task {
-//  taskB.value + ":" + taskC.value
-//}
 
-def makeSomeSources(base: File): Seq[File] = {
-  Seq(base)
+lazy val listDeps = taskKey[List[String]]("List dependencies")
+listDeps := {
+  Subprojects.helloTwo.getAllUpstream().map(_.name).toList
 }
 
-sourceGenerators in Compile += Def.task {
-  makeSomeSources((sourceManaged in Compile).value / "demo")
-}.taskValue
-
-
+lazy val listCoreDeps = taskKey[List[String]]("List dependencies")
+listCoreDeps := {
+  Subprojects.helloCore.getAllUpstream().map(_.name).toList
+}
